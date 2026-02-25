@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RifqyPing - Global Network Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        neon: '#00f2fe',
+                        darkBg: '#0f172a',
+                        cardBg: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0f172a; color: white; font-family: 'Inter', sans-serif; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    </style>
+</head>
+<body class="p-6 md:p-12 min-h-screen">
+
+    <header class="mb-10 text-center md:text-left flex justify-between items-center">
+        <div>
+            <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon to-blue-500">RifqyPing <span class="text-white text-sm">v1.0</span></h1>
+            <p class="text-gray-400 mt-2">Advanced Vercel Edge Ping & Geo-Analyzer</p>
+        </div>
+        <button onclick="runAllTests()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold transition-all shadow-[0_0_15px_rgba(0,242,254,0.4)]">
+            Run Auto-Test
+        </button>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <div class="glass-card p-6 rounded-2xl flex flex-col justify-center items-center relative overflow-hidden">
+            <h2 class="text-gray-400 font-semibold mb-2">Edge Latency (Default)</h2>
+            <div class="text-6xl font-black text-neon" id="ping-result">--<span class="text-2xl">ms</span></div>
+            <p id="ping-status" class="mt-2 text-sm text-gray-400">Menunggu tes...</p>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl">
+            <h2 class="text-gray-400 font-semibold mb-4 border-b border-gray-700 pb-2">Your Geolocation</h2>
+            <ul class="space-y-3">
+                <li class="flex justify-between"><span class="text-gray-500">IP Address:</span> <strong id="geo-ip" class="text-white">...</strong></li>
+                <li class="flex justify-between"><span class="text-gray-500">City:</span> <strong id="geo-city" class="text-white">...</strong></li>
+                <li class="flex justify-between"><span class="text-gray-500">Country:</span> <strong id="geo-country" class="text-white">...</strong></li>
+                <li class="flex justify-between"><span class="text-gray-500">Vercel Node:</span> <strong id="geo-node" class="text-neon">...</strong></li>
+            </ul>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl">
+            <h2 class="text-gray-400 font-semibold mb-4 border-b border-gray-700 pb-2">DNS over HTTPS (Cloudflare)</h2>
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-gray-500">Resolution Time:</span>
+                <span id="doh-result" class="text-2xl font-bold text-green-400">-- ms</span>
+            </div>
+            <p id="doh-status" class="text-xs text-gray-500">Mengukur waktu *handshake* DNS...</p>
+        </div>
+    </div>
+
+    <div class="mt-10 glass-card p-6 rounded-2xl">
+        <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+            🌍 Global Server Testing 
+            <span class="text-xs bg-red-500 text-white px-2 py-1 rounded">Manual</span>
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <button onclick="testGlobal('sin1', 'Asia - Singapore')" class="p-4 border border-gray-700 rounded-xl hover:bg-gray-800 transition text-left group">
+                <div class="text-sm text-gray-400">Asia (Primary)</div>
+                <div class="font-bold text-lg">Singapore (sin1)</div>
+                <div id="ping-sin1" class="mt-2 text-neon text-xl font-mono group-hover:pulse">-- ms</div>
+            </button>
+            <button onclick="testGlobal('iad1', 'US - Washington')" class="p-4 border border-gray-700 rounded-xl hover:bg-gray-800 transition text-left group">
+                <div class="text-sm text-gray-400">Americas (Primary)</div>
+                <div class="font-bold text-lg">Washington D.C. (iad1)</div>
+                <div id="ping-iad1" class="mt-2 text-neon text-xl font-mono group-hover:pulse">-- ms</div>
+            </button>
+            <button onclick="testGlobal('fra1', 'Europe - Frankfurt')" class="p-4 border border-gray-700 rounded-xl hover:bg-gray-800 transition text-left group">
+                <div class="text-sm text-gray-400">Europe (Primary)</div>
+                <div class="font-bold text-lg">Frankfurt (fra1)</div>
+                <div id="ping-fra1" class="mt-2 text-neon text-xl font-mono group-hover:pulse">-- ms</div>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Logika Ping ke API Vercel
+        async function measurePing(url) {
+            const start = performance.now();
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Network error');
+                const end = performance.now();
+                return Math.round(end - start);
+            } catch (error) {
+                return "Err";
+            }
+        }
+
+        async function runAutoTest() {
+            document.getElementById('ping-result').innerHTML = "<span class='pulse'>...</span>";
+            document.getElementById('ping-status').innerText = "Mengukur latensi ke Vercel Edge terdekat...";
+            
+            // 1. Tes Ping Default
+            const latency = await measurePing('/api/ping');
+            const pingEl = document.getElementById('ping-result');
+            pingEl.innerHTML = `${latency}<span class="text-2xl">ms</span>`;
+            
+            if (latency < 50) pingEl.className = "text-6xl font-black text-neon";
+            else if (latency < 150) pingEl.className = "text-6xl font-black text-yellow-400";
+            else pingEl.className = "text-6xl font-black text-red-500";
+
+            document.getElementById('ping-status').innerText = "Test selesai.";
+
+            // 2. Ambil Data Geo
+            try {
+                const geoRes = await fetch('/api/geo');
+                const geoData = await geoRes.json();
+                document.getElementById('geo-ip').innerText = geoData.ip || "Unknown";
+                document.getElementById('geo-city').innerText = geoData.city || "Unknown";
+                document.getElementById('geo-country').innerText = geoData.country || "Unknown";
+                document.getElementById('geo-node').innerText = geoData.vercelRegion || "Unknown";
+            } catch (e) {
+                console.error("Geo fetch error");
+            }
+
+            // 3. Tes DoH
+            const dohLatency = await measurePing('/api/doh');
+            document.getElementById('doh-result').innerText = `${dohLatency} ms`;
+            document.getElementById('doh-status').innerText = "Tested via Cloudflare (1.1.1.1)";
+        }
+
+        // Logika Ping Global
+        async function testGlobal(regionId, regionName) {
+            const el = document.getElementById(`ping-${regionId}`);
+            el.innerHTML = "<span class='pulse'>...</span>";
+            // Memanggil API ping dengan parameter region (Vercel Anycast Override Trick)
+            const latency = await measurePing(`/api/ping?region=${regionId}`);
+            el.innerHTML = `${latency} ms`;
+        }
+
+        // Jalankan saat pertama kali dibuka
+        function runAllTests() {
+            runAutoTest();
+        }
+    </script>
+</body>
+</html>
