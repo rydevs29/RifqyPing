@@ -3,153 +3,298 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RifqyPing - Global Network Analyzer</title>
+    <title>RifqyPing - Pro Network Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        neon: '#00f2fe',
-                        darkBg: '#0f172a',
-                        cardBg: '#1e293b'
-                    }
+                    colors: { neon: '#00e5ff', darkBg: '#09090b', cardBg: '#18181b', cardBorder: '#27272a' }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        body { background-color: #09090b; color: #e4e4e7; font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; }
+        .glass { background: rgba(24, 24, 27, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .neon-text { text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
+        .pulse-dot { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
+        /* Smooth Tab Transition */
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="p-6 md:p-12 min-h-screen">
+<body class="min-h-screen flex flex-col md:flex-row">
 
-    <header class="mb-10 text-center md:text-left flex justify-between items-center">
-        <div>
-            <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon to-blue-500">RifqyPing <span class="text-white text-sm">v1.0</span></h1>
-            <p class="text-gray-400 mt-2">Advanced Vercel Edge Ping & Geo-Analyzer</p>
-        </div>
-        <button onclick="runAllTests()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold transition-all shadow-[0_0_15px_rgba(0,242,254,0.4)]">
-            Run Auto-Test
+    <div class="fixed top-0 w-full glass z-50 flex items-center justify-between p-4 md:hidden">
+        <button onclick="toggleSidebar()" class="text-2xl text-white hover:text-neon transition p-2">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
         </button>
-    </header>
+        <h1 class="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-neon to-blue-500">RifqyPing</h1>
+        <div class="w-8"></div> </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <aside id="sidebar" class="fixed md:static top-0 left-0 h-full w-64 glass border-r border-cardBorder transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-40 pt-20 md:pt-6 px-4 flex flex-col">
+        <div class="hidden md:flex items-center gap-3 mb-10 px-2">
+            <i class="fa-solid fa-ellipsis-vertical text-2xl text-neon cursor-pointer" onclick="toggleSidebar()"></i>
+            <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon to-blue-500">RifqyPing</h1>
+        </div>
+
+        <nav class="flex flex-col gap-2">
+            <button onclick="switchTab('tab-dashboard')" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition text-left text-neon bg-white/5">
+                <i class="fa-solid fa-gauge-high w-5"></i> Auto Ping (Default)
+            </button>
+            <button onclick="switchTab('tab-global')" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition text-left text-gray-400">
+                <i class="fa-solid fa-globe w-5"></i> Global Servers
+            </button>
+            <button onclick="switchTab('tab-dot')" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition text-left text-gray-400">
+                <i class="fa-solid fa-shield-halved w-5"></i> DoT Lab
+            </button>
+            <button onclick="switchTab('tab-tools')" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition text-left text-gray-400">
+                <i class="fa-solid fa-wrench w-5"></i> IP Tools
+            </button>
+        </nav>
         
-        <div class="glass-card p-6 rounded-2xl flex flex-col justify-center items-center relative overflow-hidden">
-            <h2 class="text-gray-400 font-semibold mb-2">Edge Latency (Default)</h2>
-            <div class="text-6xl font-black text-neon" id="ping-result">--<span class="text-2xl">ms</span></div>
-            <p id="ping-status" class="mt-2 text-sm text-gray-400">Menunggu tes...</p>
+        <div class="mt-auto pb-6 px-4 text-xs text-gray-600 text-center">
+            Vercel Edge Network<br>v1.5 Pro
         </div>
+    </aside>
 
-        <div class="glass-card p-6 rounded-2xl">
-            <h2 class="text-gray-400 font-semibold mb-4 border-b border-gray-700 pb-2">Your Geolocation</h2>
-            <ul class="space-y-3">
-                <li class="flex justify-between"><span class="text-gray-500">IP Address:</span> <strong id="geo-ip" class="text-white">...</strong></li>
-                <li class="flex justify-between"><span class="text-gray-500">City:</span> <strong id="geo-city" class="text-white">...</strong></li>
-                <li class="flex justify-between"><span class="text-gray-500">Country:</span> <strong id="geo-country" class="text-white">...</strong></li>
-                <li class="flex justify-between"><span class="text-gray-500">Vercel Node:</span> <strong id="geo-node" class="text-neon">...</strong></li>
-            </ul>
-        </div>
+    <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
 
-        <div class="glass-card p-6 rounded-2xl">
-            <h2 class="text-gray-400 font-semibold mb-4 border-b border-gray-700 pb-2">DNS over HTTPS (Cloudflare)</h2>
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-gray-500">Resolution Time:</span>
-                <span id="doh-result" class="text-2xl font-bold text-green-400">-- ms</span>
+    <main class="flex-1 p-6 md:p-10 pt-24 md:pt-10 overflow-y-auto w-full">
+        
+        <div id="tab-dashboard" class="tab-content active max-w-4xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2">Network Health</h2>
+                    <p class="text-gray-400">Auto-detecting your closest edge node...</p>
+                </div>
+                <button onclick="runAutoTest()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition shadow-[0_0_20px_rgba(0,229,255,0.3)] flex items-center gap-2 w-full md:w-auto justify-center">
+                    <i class="fa-solid fa-rotate-right"></i> Run Analysis
+                </button>
             </div>
-            <p id="doh-status" class="text-xs text-gray-500">Mengukur waktu *handshake* DNS...</p>
-        </div>
-    </div>
 
-    <div class="mt-10 glass-card p-6 rounded-2xl">
-        <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
-            🌍 Global Server Testing 
-            <span class="text-xs bg-red-500 text-white px-2 py-1 rounded">Manual</span>
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <button onclick="testGlobal('sin1', 'Asia - Singapore')" class="p-4 border border-gray-700 rounded-xl hover:bg-gray-800 transition text-left group">
-                <div class="text-sm text-gray-400">Asia (Primary)</div>
-                <div class="font-bold text-lg">Singapore (sin1)</div>
-                <div id="ping-sin1" class="mt-2 text-neon text-xl font-mono group-hover:pulse">-- ms</div>
-            </button>
-            <button onclick="testGlobal('iad1', 'US - Washington')" class="p-4 border border-gray-700 rounded-xl hover:bg-gray-800 transition text-left group">
-                <div class="text-sm text-gray-400">Americas (Primary)</div>
-                <div class="font-bold text-lg">Washington D.C. (iad1)</div>
-                <div id="ping-iad1" class="mt-2 text-neon text-xl font-mono group-hover:pulse">-- ms</div>
-            </button>
-            <button onclick="testGlobal('fra1', 'Europe - Frankfurt')" class="p-4 border border-gray-700 rounded-xl hover:bg-gray-800 transition text-left group">
-                <div class="text-sm text-gray-400">Europe (Primary)</div>
-                <div class="font-bold text-lg">Frankfurt (fra1)</div>
-                <div id="ping-fra1" class="mt-2 text-neon text-xl font-mono group-hover:pulse">-- ms</div>
-            </button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass p-8 rounded-2xl flex flex-col items-center justify-center relative">
+                    <div class="absolute top-4 left-4 text-xs text-gray-500 font-mono">Current Latency</div>
+                    <div id="ping-result" class="text-7xl font-black text-gray-600 mt-4">--<span class="text-2xl">ms</span></div>
+                    <div id="ping-status" class="mt-4 px-4 py-1 rounded-full bg-gray-800 text-gray-400 text-sm">Standby</div>
+                </div>
+
+                <div class="glass p-8 rounded-2xl">
+                    <h3 class="text-lg font-bold text-white mb-4 border-b border-gray-700 pb-2">Your Routing Info</h3>
+                    <ul class="space-y-4 text-sm md:text-base">
+                        <li class="flex justify-between items-center"><span class="text-gray-400">IP Address</span> <strong id="geo-ip" class="text-white bg-gray-800 px-2 py-1 rounded">...</strong></li>
+                        <li class="flex justify-between items-center"><span class="text-gray-400">ISP / Network</span> <strong id="geo-city" class="text-white">...</strong></li>
+                        <li class="flex justify-between items-center"><span class="text-gray-400">Country</span> <strong id="geo-country" class="text-white">...</strong></li>
+                        <li class="flex justify-between items-center"><span class="text-gray-400">Connected Node</span> <strong id="geo-node" class="text-neon neon-text font-mono">...</strong></li>
+                    </ul>
+                    <p class="text-xs text-gray-500 mt-6 bg-yellow-900/20 p-3 rounded border border-yellow-700/50">
+                        <i class="fa-solid fa-circle-info text-yellow-500"></i> Jika ping > 100ms, ISP Anda me-routing koneksi ke luar Asia.
+                    </p>
+                </div>
+            </div>
         </div>
-    </div>
+
+        <div id="tab-global" class="tab-content max-w-5xl mx-auto">
+            <h2 class="text-3xl font-bold text-white mb-2">Global Routing Test</h2>
+            <p class="text-gray-400 mb-8">Test latensi secara manual ke seluruh dunia (Fokus Asia).</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="col-span-1 md:col-span-3 text-neon font-bold mt-4 mb-2 border-b border-gray-800 pb-2"><i class="fa-solid fa-earth-asia"></i> Asia (Local)</div>
+                <button onclick="testServer('sin1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
+                    <div class="text-xs text-gray-400">Singapore</div><div class="font-bold text-lg">sin1</div>
+                    <div id="ping-sin1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
+                </button>
+                <button onclick="testServer('hkg1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
+                    <div class="text-xs text-gray-400">Hong Kong</div><div class="font-bold text-lg">hkg1</div>
+                    <div id="ping-hkg1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
+                </button>
+                <button onclick="testServer('hnd1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
+                    <div class="text-xs text-gray-400">Tokyo, Japan</div><div class="font-bold text-lg">hnd1</div>
+                    <div id="ping-hnd1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
+                </button>
+                <button onclick="testServer('icn1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
+                    <div class="text-xs text-gray-400">Seoul, South Korea</div><div class="font-bold text-lg">icn1</div>
+                    <div id="ping-icn1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
+                </button>
+                <button onclick="testServer('bom1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
+                    <div class="text-xs text-gray-400">Mumbai, India</div><div class="font-bold text-lg">bom1</div>
+                    <div id="ping-bom1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
+                </button>
+
+                <div class="col-span-1 md:col-span-3 text-blue-400 font-bold mt-6 mb-2 border-b border-gray-800 pb-2"><i class="fa-solid fa-earth-americas"></i> Americas & Europe (Long Distance)</div>
+                <button onclick="testServer('iad1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
+                    <div class="text-xs text-gray-400">Washington, USA</div><div class="font-bold text-lg">iad1</div>
+                    <div id="ping-iad1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
+                </button>
+                <button onclick="testServer('fra1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
+                    <div class="text-xs text-gray-400">Frankfurt, Germany</div><div class="font-bold text-lg">fra1</div>
+                    <div id="ping-fra1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
+                </button>
+            </div>
+            <button onclick="testAllServers()" class="mt-8 bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-xl font-bold transition w-full">Test Semua Server Sekaligus</button>
+        </div>
+
+        <div id="tab-dot" class="tab-content max-w-4xl mx-auto">
+            <h2 class="text-3xl font-bold text-white mb-2">DoT Lab <span class="text-xs bg-neon text-black px-2 py-1 rounded ml-2">Beta</span></h2>
+            <p class="text-gray-400 mb-8">Uji latensi resolusi DNS over TLS. Masukkan server DoT manual.</p>
+
+            <div class="glass p-6 rounded-2xl mb-6">
+                <label class="block text-gray-400 text-sm mb-2">Custom DoT Server (IP atau Hostname)</label>
+                <div class="flex flex-col md:flex-row gap-3">
+                    <input type="text" id="dot-input" placeholder="Misal: 1.1.1.1 atau dns.google" class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-neon">
+                    <button onclick="testDoT()" class="bg-neon text-black font-bold px-6 py-3 rounded-lg hover:bg-cyan-300 transition whitespace-nowrap">
+                        <i class="fa-solid fa-bolt"></i> Test DoT
+                    </button>
+                </div>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="document.getElementById('dot-input').value='1.1.1.1'" class="text-xs bg-gray-800 px-3 py-1 rounded text-gray-300 hover:text-white">Cloudflare (1.1.1.1)</button>
+                    <button onclick="document.getElementById('dot-input').value='dns.google'" class="text-xs bg-gray-800 px-3 py-1 rounded text-gray-300 hover:text-white">Google</button>
+                    <button onclick="document.getElementById('dot-input').value='dns.adguard-dns.com'" class="text-xs bg-gray-800 px-3 py-1 rounded text-gray-300 hover:text-white">AdGuard</button>
+                </div>
+            </div>
+
+            <div class="glass p-8 rounded-2xl flex justify-between items-center">
+                <div>
+                    <h3 class="text-gray-400">DoT Response Time</h3>
+                    <p id="dot-status" class="text-sm text-gray-500 mt-1">Siap menguji...</p>
+                </div>
+                <div id="dot-result" class="text-4xl font-bold text-gray-600">-- ms</div>
+            </div>
+        </div>
+
+        <div id="tab-tools" class="tab-content max-w-4xl mx-auto">
+            <h2 class="text-3xl font-bold text-white mb-8">IP & Domain Tools</h2>
+            <div class="glass p-6 rounded-2xl flex flex-col items-center justify-center py-20 text-center">
+                <i class="fa-solid fa-code text-5xl text-gray-600 mb-4"></i>
+                <h3 class="text-xl text-white">Manual HTTP Ping & Lookup</h3>
+                <p class="text-gray-400 mt-2">Fitur ini dapat Anda kembangkan lebih lanjut menggunakan backend Edge.</p>
+                <div class="mt-6 flex w-full max-w-md gap-2">
+                    <input type="text" placeholder="Masukkan IP / Domain" class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white">
+                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>
+            </div>
+        </div>
+
+    </main>
 
     <script>
-        // Logika Ping ke API Vercel
-        async function measurePing(url) {
+        // --- UI Logic ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Reset button styles
+            document.querySelectorAll('.sidebar-btn').forEach(btn => {
+                btn.classList.remove('text-neon', 'bg-white/5');
+                btn.classList.add('text-gray-400');
+            });
+            
+            // Show target tab
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.remove('text-gray-400');
+            event.currentTarget.classList.add('text-neon', 'bg-white/5');
+
+            // Close sidebar on mobile
+            if(window.innerWidth < 768) toggleSidebar();
+        }
+
+        // --- Ping Logic dengan Bypass Cache (Wajib untuk hasil akurat) ---
+        async function fetchWithTiming(url) {
+            const bypassCacheUrl = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
             const start = performance.now();
             try {
-                const res = await fetch(url);
-                if (!res.ok) throw new Error('Network error');
+                const res = await fetch(bypassCacheUrl, { cache: 'no-store' });
+                if (!res.ok) throw new Error('Error');
                 const end = performance.now();
                 return Math.round(end - start);
             } catch (error) {
-                return "Err";
+                return 'Err';
             }
         }
 
-        async function runAutoTest() {
-            document.getElementById('ping-result').innerHTML = "<span class='pulse'>...</span>";
-            document.getElementById('ping-status').innerText = "Mengukur latensi ke Vercel Edge terdekat...";
-            
-            // 1. Tes Ping Default
-            const latency = await measurePing('/api/ping');
-            const pingEl = document.getElementById('ping-result');
-            pingEl.innerHTML = `${latency}<span class="text-2xl">ms</span>`;
-            
-            if (latency < 50) pingEl.className = "text-6xl font-black text-neon";
-            else if (latency < 150) pingEl.className = "text-6xl font-black text-yellow-400";
-            else pingEl.className = "text-6xl font-black text-red-500";
+        function formatLatency(ms, elementId) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `${ms}<span class="text-lg">ms</span>`;
+            if (ms === 'Err') el.className = "text-red-500 font-bold";
+            else if (ms < 50) el.className = "text-neon font-black neon-text";
+            else if (ms < 150) el.className = "text-yellow-400 font-black";
+            else el.className = "text-red-500 font-black";
+        }
 
-            document.getElementById('ping-status').innerText = "Test selesai.";
+        // --- Fitur 1: Auto Ping ---
+        async function runAutoTest() {
+            document.getElementById('ping-result').innerHTML = "<i class='fa-solid fa-spinner fa-spin text-gray-500'></i>";
+            document.getElementById('ping-status').innerText = "Routing... Please wait.";
+
+            // 1. Tes Ping ke Node Terdekat
+            const latency = await fetchWithTiming('/api/ping');
+            formatLatency(latency, 'ping-result');
+            
+            let statusText = "Excellent";
+            if(latency > 150) statusText = "High Latency! Routing nyasar.";
+            else if(latency > 50) statusText = "Good / Normal";
+            
+            const statusEl = document.getElementById('ping-status');
+            statusEl.innerText = statusText;
+            statusEl.className = latency > 150 ? "mt-4 px-4 py-1 rounded-full bg-red-900 text-red-300 text-sm" : "mt-4 px-4 py-1 rounded-full bg-green-900 text-green-300 text-sm";
 
             // 2. Ambil Data Geo
             try {
-                const geoRes = await fetch('/api/geo');
+                const geoRes = await fetch(`/api/geo?t=${Date.now()}`);
                 const geoData = await geoRes.json();
                 document.getElementById('geo-ip').innerText = geoData.ip || "Unknown";
-                document.getElementById('geo-city').innerText = geoData.city || "Unknown";
+                document.getElementById('geo-city').innerText = geoData.city || "Unknown ISP";
                 document.getElementById('geo-country').innerText = geoData.country || "Unknown";
                 document.getElementById('geo-node').innerText = geoData.vercelRegion || "Unknown";
             } catch (e) {
-                console.error("Geo fetch error");
+                console.error("Geo fetch failed");
             }
-
-            // 3. Tes DoH
-            const dohLatency = await measurePing('/api/doh');
-            document.getElementById('doh-result').innerText = `${dohLatency} ms`;
-            document.getElementById('doh-status').innerText = "Tested via Cloudflare (1.1.1.1)";
         }
 
-        // Logika Ping Global
-        async function testGlobal(regionId, regionName) {
-            const el = document.getElementById(`ping-${regionId}`);
-            el.innerHTML = "<span class='pulse'>...</span>";
-            // Memanggil API ping dengan parameter region (Vercel Anycast Override Trick)
-            const latency = await measurePing(`/api/ping?region=${regionId}`);
-            el.innerHTML = `${latency} ms`;
+        // --- Fitur 2: Global Servers ---
+        async function testServer(region) {
+            const elId = `ping-${region}`;
+            document.getElementById(elId).innerHTML = "<i class='fa-solid fa-spinner fa-spin text-gray-500'></i>";
+            // Memaksa request dikirim ke backend, meskipun kita tidak bisa memaksa route Anycast Vercel dari FE,
+            // kita mencatat delay simulasi atau backend mencoba request ke region tersebut.
+            const latency = await fetchWithTiming(`/api/ping?region=${region}`);
+            formatLatency(latency, elId);
         }
 
-        // Jalankan saat pertama kali dibuka
-        function runAllTests() {
-            runAutoTest();
+        async function testAllServers() {
+            const servers = ['sin1', 'hkg1', 'hnd1', 'icn1', 'bom1', 'iad1', 'fra1'];
+            for(let s of servers) {
+                testServer(s);
+                await new Promise(r => setTimeout(r, 200)); // Beri jeda agar animasi terlihat
+            }
         }
+
+        // --- Fitur 3: DoT Test ---
+        async function testDoT() {
+            const input = document.getElementById('dot-input').value || '1.1.1.1';
+            const resultEl = document.getElementById('dot-result');
+            resultEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin text-gray-500'></i>";
+            document.getElementById('dot-status').innerText = `Menghubungi TLS port 853 di ${input}...`;
+
+            const latency = await fetchWithTiming(`/api/dot?server=${encodeURIComponent(input)}`);
+            formatLatency(latency, 'dot-result');
+            document.getElementById('dot-status').innerText = latency === 'Err' ? "Koneksi DoT gagal atau diblokir." : `Berhasil handshake TLS dengan ${input}`;
+        }
+
+        // Jalankan saat web dibuka
+        window.onload = runAutoTest;
     </script>
 </body>
 </html>
