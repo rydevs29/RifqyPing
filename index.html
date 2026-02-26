@@ -3,180 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RifqyPing - Pro Network Analyzer</title>
+    <title>EdgePulse - Pro Network Diagnostics</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: { neon: '#00e5ff', darkBg: '#09090b', cardBg: '#18181b', cardBorder: '#27272a' }
+                    colors: { neon: '#00f2fe', darkBg: '#050505', glassBg: '#111111', border: '#222' }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #09090b; color: #e4e4e7; font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; }
-        .glass { background: rgba(24, 24, 27, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .neon-text { text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
-        .pulse-dot { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
-        /* Smooth Tab Transition */
-        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body { background-color: #050505; color: #ededed; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .glass { background: rgba(17, 17, 17, 0.7); backdrop-filter: blur(16px); border: 1px solid #222; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); }
+        .neon-glow { text-shadow: 0 0 15px rgba(0, 242, 254, 0.6); }
+        .tab-content { display: none; opacity: 0; transform: translateY(10px); transition: all 0.4s ease; }
+        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
+        /* Scrollbar custom */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f2fe; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col md:flex-row">
 
-    <div class="fixed top-0 w-full glass z-50 flex items-center justify-between p-4 md:hidden">
-        <button onclick="toggleSidebar()" class="text-2xl text-white hover:text-neon transition p-2">
-            <i class="fa-solid fa-ellipsis-vertical"></i>
-        </button>
-        <h1 class="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-neon to-blue-500">RifqyPing</h1>
-        <div class="w-8"></div> </div>
+    <div class="md:hidden fixed top-0 w-full glass z-50 p-4 flex justify-between items-center">
+        <button onclick="toggleSidebar()" class="text-neon text-2xl px-2"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+        <span class="font-black text-white tracking-widest uppercase">Edge<span class="text-neon">Pulse</span></span>
+        <div class="w-8"></div>
+    </div>
 
-    <aside id="sidebar" class="fixed md:static top-0 left-0 h-full w-64 glass border-r border-cardBorder transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-40 pt-20 md:pt-6 px-4 flex flex-col">
-        <div class="hidden md:flex items-center gap-3 mb-10 px-2">
-            <i class="fa-solid fa-ellipsis-vertical text-2xl text-neon cursor-pointer" onclick="toggleSidebar()"></i>
-            <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon to-blue-500">RifqyPing</h1>
+    <aside id="sidebar" class="fixed md:static h-full w-72 glass z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 p-6 flex flex-col gap-6 pt-24 md:pt-6">
+        <div class="hidden md:flex items-center gap-4 mb-4">
+            <i class="fa-solid fa-ellipsis-vertical text-neon text-2xl cursor-pointer hover:scale-110 transition" onclick="toggleSidebar()"></i>
+            <h1 class="text-2xl font-black tracking-tighter text-white uppercase">Edge<span class="text-neon">Pulse</span></h1>
         </div>
 
-        <nav class="flex flex-col gap-2">
-            <button onclick="switchTab('tab-dashboard')" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition text-left text-neon bg-white/5">
-                <i class="fa-solid fa-gauge-high w-5"></i> Auto Ping (Default)
+        <nav class="flex flex-col gap-2 flex-1">
+            <button onclick="switchTab('dash')" class="nav-btn active flex items-center gap-3 p-4 rounded-xl bg-neon/10 text-neon font-bold border border-neon/20 transition">
+                <i class="fa-solid fa-gauge-high w-5"></i> Network Health
             </button>
-            <button onclick="switchTab('tab-global')" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition text-left text-gray-400">
-                <i class="fa-solid fa-globe w-5"></i> Global Servers
+            <button onclick="switchTab('stability')" class="nav-btn flex items-center gap-3 p-4 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition">
+                <i class="fa-solid fa-chart-line w-5"></i> Jitter & Packet Loss
             </button>
-            <button onclick="switchTab('tab-dot')" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition text-left text-gray-400">
-                <i class="fa-solid fa-shield-halved w-5"></i> DoT Lab
+            <button onclick="switchTab('global')" class="nav-btn flex items-center gap-3 p-4 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition">
+                <i class="fa-solid fa-earth-asia w-5"></i> Global Edge Nodes
             </button>
-            <button onclick="switchTab('tab-tools')" class="sidebar-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition text-left text-gray-400">
-                <i class="fa-solid fa-wrench w-5"></i> IP Tools
+            <button onclick="switchTab('dot')" class="nav-btn flex items-center gap-3 p-4 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition">
+                <i class="fa-solid fa-shield-halved w-5"></i> DNS over TLS Lab
+            </button>
+            <button onclick="switchTab('tools')" class="nav-btn flex items-center gap-3 p-4 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition">
+                <i class="fa-solid fa-map-location-dot w-5"></i> IP Geospatial
             </button>
         </nav>
         
-        <div class="mt-auto pb-6 px-4 text-xs text-gray-600 text-center">
-            Vercel Edge Network<br>v1.5 Pro
-        </div>
+        <button onclick="generateReport()" class="bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-copy"></i> Copy ISP Report
+        </button>
     </aside>
 
-    <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
+    <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 hidden md:hidden"></div>
 
     <main class="flex-1 p-6 md:p-10 pt-24 md:pt-10 overflow-y-auto w-full">
         
-        <div id="tab-dashboard" class="tab-content active max-w-4xl mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+        <div id="dash" class="tab-content active max-w-5xl mx-auto">
+            <div class="flex justify-between items-end mb-8">
                 <div>
-                    <h2 class="text-3xl font-bold text-white mb-2">Network Health</h2>
-                    <p class="text-gray-400">Auto-detecting your closest edge node...</p>
+                    <h2 class="text-4xl font-black text-white">System <span class="text-neon">Dashboard</span></h2>
+                    <p class="text-gray-500 mt-1">Diagnosa otomatis rute Vercel Edge terdekat.</p>
                 </div>
-                <button onclick="runAutoTest()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition shadow-[0_0_20px_rgba(0,229,255,0.3)] flex items-center gap-2 w-full md:w-auto justify-center">
+                <button onclick="runAutoTest()" class="hidden md:block bg-neon text-black font-bold px-8 py-3 rounded-xl hover:bg-cyan-300 transition shadow-[0_0_15px_rgba(0,242,254,0.4)]">
                     <i class="fa-solid fa-rotate-right"></i> Run Analysis
                 </button>
             </div>
 
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass p-8 rounded-3xl md:col-span-2 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                    <div class="absolute top-4 left-6 text-xs text-gray-500 font-bold tracking-widest"><i class="fa-solid fa-satellite-dish"></i> CURRENT LATENCY</div>
+                    <div id="main-ping" class="text-8xl md:text-9xl font-black neon-glow mt-4">--<span class="text-3xl">ms</span></div>
+                    <div id="ping-status" class="mt-6 px-6 py-2 rounded-full bg-gray-900 border border-gray-700 text-gray-400 text-sm font-bold tracking-wide">SIAP DITES</div>
+                </div>
+
+                <div class="glass p-8 rounded-3xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold border-b border-border pb-3 mb-4"><i class="fa-solid fa-route text-neon"></i> Routing Info</h3>
+                        <ul class="space-y-4 text-sm">
+                            <li class="flex justify-between"><span class="text-gray-500">Public IP</span> <strong id="geo-ip" class="text-white">...</strong></li>
+                            <li class="flex justify-between"><span class="text-gray-500">ISP / Kota</span> <strong id="geo-city" class="text-white">...</strong></li>
+                            <li class="flex justify-between"><span class="text-gray-500">Negara</span> <strong id="geo-country" class="text-white">...</strong></li>
+                            <li class="flex justify-between"><span class="text-gray-500">Vercel Node</span> <strong id="geo-node" class="text-neon bg-neon/10 px-2 py-0.5 rounded font-mono">...</strong></li>
+                        </ul>
+                    </div>
+                    <div id="diag-alert" class="mt-6 p-4 rounded-xl bg-red-900/30 border border-red-500/30 hidden">
+                        <div class="text-red-400 font-bold text-sm mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Routing Bocor!</div>
+                        <div class="text-gray-400 text-xs">Ping kamu di atas 200ms. ISP kamu salah merutekan trafik ke luar Asia. Gunakan VPN atau lapor ISP.</div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="runAutoTest()" class="md:hidden mt-6 w-full bg-neon text-black font-bold px-8 py-4 rounded-xl hover:bg-cyan-300 transition">
+                JALANKAN TES SEKARANG
+            </button>
+        </div>
+
+        <div id="stability" class="tab-content max-w-5xl mx-auto">
+            <h2 class="text-3xl font-black mb-2">Jitter & <span class="text-neon">Packet Loss</span></h2>
+            <p class="text-gray-500 mb-8">Menembakkan 20 paket secara beruntun untuk mengukur stabilitas koneksi.</p>
+
+            <button onclick="runStabilityTest()" id="btn-stab" class="mb-6 bg-white text-black font-bold px-8 py-3 rounded-xl hover:bg-gray-200 transition">Mulai Tes Stabilitas</button>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass p-8 rounded-2xl flex flex-col items-center justify-center relative">
-                    <div class="absolute top-4 left-4 text-xs text-gray-500 font-mono">Current Latency</div>
-                    <div id="ping-result" class="text-7xl font-black text-gray-600 mt-4">--<span class="text-2xl">ms</span></div>
-                    <div id="ping-status" class="mt-4 px-4 py-1 rounded-full bg-gray-800 text-gray-400 text-sm">Standby</div>
+                <div class="glass p-8 rounded-3xl text-center">
+                    <div class="text-gray-500 text-sm font-bold mb-2 uppercase">Jitter (Fluktuasi)</div>
+                    <div id="res-jitter" class="text-6xl font-black text-white">-- ms</div>
+                    <p class="text-xs text-gray-500 mt-2">Semakin kecil semakin baik untuk Gaming/Zoom.</p>
                 </div>
-
-                <div class="glass p-8 rounded-2xl">
-                    <h3 class="text-lg font-bold text-white mb-4 border-b border-gray-700 pb-2">Your Routing Info</h3>
-                    <ul class="space-y-4 text-sm md:text-base">
-                        <li class="flex justify-between items-center"><span class="text-gray-400">IP Address</span> <strong id="geo-ip" class="text-white bg-gray-800 px-2 py-1 rounded">...</strong></li>
-                        <li class="flex justify-between items-center"><span class="text-gray-400">ISP / Network</span> <strong id="geo-city" class="text-white">...</strong></li>
-                        <li class="flex justify-between items-center"><span class="text-gray-400">Country</span> <strong id="geo-country" class="text-white">...</strong></li>
-                        <li class="flex justify-between items-center"><span class="text-gray-400">Connected Node</span> <strong id="geo-node" class="text-neon neon-text font-mono">...</strong></li>
-                    </ul>
-                    <p class="text-xs text-gray-500 mt-6 bg-yellow-900/20 p-3 rounded border border-yellow-700/50">
-                        <i class="fa-solid fa-circle-info text-yellow-500"></i> Jika ping > 100ms, ISP Anda me-routing koneksi ke luar Asia.
-                    </p>
+                <div class="glass p-8 rounded-3xl text-center">
+                    <div class="text-gray-500 text-sm font-bold mb-2 uppercase">Packet Loss</div>
+                    <div id="res-loss" class="text-6xl font-black text-white">-- %</div>
+                    <p class="text-xs text-gray-500 mt-2">Jika > 0%, koneksi kamu sering putus-putus.</p>
+                </div>
+            </div>
+            
+            <div class="mt-6 glass p-4 rounded-2xl">
+                <div class="flex justify-between text-xs text-gray-500 mb-2">
+                    <span>Progres Pengiriman Paket</span>
+                    <span id="stab-count">0 / 20</span>
+                </div>
+                <div class="w-full bg-gray-900 rounded-full h-2.5">
+                    <div id="stab-bar" class="bg-neon h-2.5 rounded-full transition-all" style="width: 0%"></div>
                 </div>
             </div>
         </div>
 
-        <div id="tab-global" class="tab-content max-w-5xl mx-auto">
-            <h2 class="text-3xl font-bold text-white mb-2">Global Routing Test</h2>
-            <p class="text-gray-400 mb-8">Test latensi secara manual ke seluruh dunia (Fokus Asia).</p>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="col-span-1 md:col-span-3 text-neon font-bold mt-4 mb-2 border-b border-gray-800 pb-2"><i class="fa-solid fa-earth-asia"></i> Asia (Local)</div>
-                <button onclick="testServer('sin1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
-                    <div class="text-xs text-gray-400">Singapore</div><div class="font-bold text-lg">sin1</div>
-                    <div id="ping-sin1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
-                </button>
-                <button onclick="testServer('hkg1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
-                    <div class="text-xs text-gray-400">Hong Kong</div><div class="font-bold text-lg">hkg1</div>
-                    <div id="ping-hkg1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
-                </button>
-                <button onclick="testServer('hnd1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
-                    <div class="text-xs text-gray-400">Tokyo, Japan</div><div class="font-bold text-lg">hnd1</div>
-                    <div id="ping-hnd1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
-                </button>
-                <button onclick="testServer('icn1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
-                    <div class="text-xs text-gray-400">Seoul, South Korea</div><div class="font-bold text-lg">icn1</div>
-                    <div id="ping-icn1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
-                </button>
-                <button onclick="testServer('bom1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
-                    <div class="text-xs text-gray-400">Mumbai, India</div><div class="font-bold text-lg">bom1</div>
-                    <div id="ping-bom1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
-                </button>
-
-                <div class="col-span-1 md:col-span-3 text-blue-400 font-bold mt-6 mb-2 border-b border-gray-800 pb-2"><i class="fa-solid fa-earth-americas"></i> Americas & Europe (Long Distance)</div>
-                <button onclick="testServer('iad1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
-                    <div class="text-xs text-gray-400">Washington, USA</div><div class="font-bold text-lg">iad1</div>
-                    <div id="ping-iad1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
-                </button>
-                <button onclick="testServer('fra1')" class="glass p-5 rounded-xl hover:bg-white/5 transition text-left group">
-                    <div class="text-xs text-gray-400">Frankfurt, Germany</div><div class="font-bold text-lg">fra1</div>
-                    <div id="ping-fra1" class="text-2xl mt-2 text-gray-500 font-mono">-- ms</div>
-                </button>
+        <div id="global" class="tab-content max-w-5xl mx-auto">
+            <h2 class="text-3xl font-black mb-8">Global <span class="text-neon">Edge Nodes</span></h2>
+            
+            <div class="mb-4 text-neon font-bold border-b border-border pb-2"><i class="fa-solid fa-earth-asia"></i> Server Asia (Seharusnya < 100ms)</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                <button onclick="pingRegion('sin1')" class="glass p-5 rounded-2xl text-left hover:border-neon transition group"><div class="text-xs text-gray-500">Singapore</div><div class="font-bold">sin1</div><div id="r-sin1" class="text-2xl font-black mt-2 text-gray-600">-- ms</div></button>
+                <button onclick="pingRegion('hkg1')" class="glass p-5 rounded-2xl text-left hover:border-neon transition group"><div class="text-xs text-gray-500">Hong Kong</div><div class="font-bold">hkg1</div><div id="r-hkg1" class="text-2xl font-black mt-2 text-gray-600">-- ms</div></button>
+                <button onclick="pingRegion('hnd1')" class="glass p-5 rounded-2xl text-left hover:border-neon transition group"><div class="text-xs text-gray-500">Tokyo, Japan</div><div class="font-bold">hnd1</div><div id="r-hnd1" class="text-2xl font-black mt-2 text-gray-600">-- ms</div></button>
             </div>
-            <button onclick="testAllServers()" class="mt-8 bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-xl font-bold transition w-full">Test Semua Server Sekaligus</button>
+
+            <div class="mb-4 text-blue-400 font-bold border-b border-border pb-2"><i class="fa-solid fa-earth-americas"></i> Server Jauh (US, EU, AUS)</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <button onclick="pingRegion('iad1')" class="glass p-5 rounded-2xl text-left hover:border-blue-400 transition group"><div class="text-xs text-gray-500">Washington, USA</div><div class="font-bold">iad1</div><div id="r-iad1" class="text-2xl font-black mt-2 text-gray-600">-- ms</div></button>
+                <button onclick="pingRegion('fra1')" class="glass p-5 rounded-2xl text-left hover:border-blue-400 transition group"><div class="text-xs text-gray-500">Frankfurt, Germany</div><div class="font-bold">fra1</div><div id="r-fra1" class="text-2xl font-black mt-2 text-gray-600">-- ms</div></button>
+                <button onclick="pingRegion('syd1')" class="glass p-5 rounded-2xl text-left hover:border-blue-400 transition group"><div class="text-xs text-gray-500">Sydney, Australia</div><div class="font-bold">syd1</div><div id="r-syd1" class="text-2xl font-black mt-2 text-gray-600">-- ms</div></button>
+            </div>
         </div>
 
-        <div id="tab-dot" class="tab-content max-w-4xl mx-auto">
-            <h2 class="text-3xl font-bold text-white mb-2">DoT Lab <span class="text-xs bg-neon text-black px-2 py-1 rounded ml-2">Beta</span></h2>
-            <p class="text-gray-400 mb-8">Uji latensi resolusi DNS over TLS. Masukkan server DoT manual.</p>
+        <div id="dot" class="tab-content max-w-4xl mx-auto">
+            <h2 class="text-3xl font-black mb-2">DNS over <span class="text-neon">TLS/HTTPS</span></h2>
+            <p class="text-gray-500 mb-8">Tes waktu respon resolver DNS. Berguna jika browsing lemot tapi ping bagus.</p>
 
-            <div class="glass p-6 rounded-2xl mb-6">
-                <label class="block text-gray-400 text-sm mb-2">Custom DoT Server (IP atau Hostname)</label>
-                <div class="flex flex-col md:flex-row gap-3">
-                    <input type="text" id="dot-input" placeholder="Misal: 1.1.1.1 atau dns.google" class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-neon">
-                    <button onclick="testDoT()" class="bg-neon text-black font-bold px-6 py-3 rounded-lg hover:bg-cyan-300 transition whitespace-nowrap">
-                        <i class="fa-solid fa-bolt"></i> Test DoT
-                    </button>
+            <div class="glass p-6 rounded-3xl mb-6">
+                <label class="text-xs text-gray-400 font-bold mb-3 block">RESOLVER DOMAIN / IP</label>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="text" id="dot-in" placeholder="Contoh: dns.adguard-dns.com atau 1.1.1.1" class="flex-1 bg-black/50 border border-gray-700 rounded-xl px-5 py-4 text-white outline-none focus:border-neon transition">
+                    <button onclick="testDoT()" class="bg-neon text-black font-bold px-8 py-4 rounded-xl hover:bg-white transition whitespace-nowrap"><i class="fa-solid fa-bolt"></i> TES DNS</button>
                 </div>
-                <div class="flex gap-2 mt-3">
-                    <button onclick="document.getElementById('dot-input').value='1.1.1.1'" class="text-xs bg-gray-800 px-3 py-1 rounded text-gray-300 hover:text-white">Cloudflare (1.1.1.1)</button>
-                    <button onclick="document.getElementById('dot-input').value='dns.google'" class="text-xs bg-gray-800 px-3 py-1 rounded text-gray-300 hover:text-white">Google</button>
-                    <button onclick="document.getElementById('dot-input').value='dns.adguard-dns.com'" class="text-xs bg-gray-800 px-3 py-1 rounded text-gray-300 hover:text-white">AdGuard</button>
+                <div class="flex flex-wrap gap-2 mt-4">
+                    <span class="text-xs text-gray-600 mt-1">Preset:</span>
+                    <button onclick="document.getElementById('dot-in').value='1.1.1.1'; testDoT()" class="text-xs bg-gray-800 px-3 py-1 rounded-full text-gray-300 hover:text-white">Cloudflare</button>
+                    <button onclick="document.getElementById('dot-in').value='dns.google'; testDoT()" class="text-xs bg-gray-800 px-3 py-1 rounded-full text-gray-300 hover:text-white">Google</button>
+                    <button onclick="document.getElementById('dot-in').value='dns.adguard-dns.com'; testDoT()" class="text-xs bg-gray-800 px-3 py-1 rounded-full text-gray-300 hover:text-white">AdGuard</button>
                 </div>
             </div>
 
-            <div class="glass p-8 rounded-2xl flex justify-between items-center">
+            <div class="glass p-8 rounded-3xl flex justify-between items-center">
                 <div>
-                    <h3 class="text-gray-400">DoT Response Time</h3>
-                    <p id="dot-status" class="text-sm text-gray-500 mt-1">Siap menguji...</p>
+                    <h3 class="text-gray-400 font-bold">Waktu Resolusi DNS</h3>
+                    <p id="dot-msg" class="text-sm text-gray-600 mt-1">Menunggu tes...</p>
                 </div>
-                <div id="dot-result" class="text-4xl font-bold text-gray-600">-- ms</div>
+                <div id="dot-res" class="text-5xl font-black text-gray-700">-- ms</div>
             </div>
         </div>
 
-        <div id="tab-tools" class="tab-content max-w-4xl mx-auto">
-            <h2 class="text-3xl font-bold text-white mb-8">IP & Domain Tools</h2>
-            <div class="glass p-6 rounded-2xl flex flex-col items-center justify-center py-20 text-center">
-                <i class="fa-solid fa-code text-5xl text-gray-600 mb-4"></i>
-                <h3 class="text-xl text-white">Manual HTTP Ping & Lookup</h3>
-                <p class="text-gray-400 mt-2">Fitur ini dapat Anda kembangkan lebih lanjut menggunakan backend Edge.</p>
-                <div class="mt-6 flex w-full max-w-md gap-2">
-                    <input type="text" placeholder="Masukkan IP / Domain" class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white">
-                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg"><i class="fa-solid fa-magnifying-glass"></i></button>
+        <div id="tools" class="tab-content max-w-4xl mx-auto">
+            <h2 class="text-3xl font-black mb-2">IP <span class="text-neon">Geospatial Info</span></h2>
+            <p class="text-gray-500 mb-8">Lacak lokasi, ASN, dan ISP dari sebuah IP atau Domain secara akurat.</p>
+
+            <div class="glass p-6 rounded-3xl mb-6">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="text" id="ip-in" placeholder="Masukkan IP address..." class="flex-1 bg-black/50 border border-gray-700 rounded-xl px-5 py-4 text-white outline-none focus:border-neon transition">
+                    <button onclick="lookupIP()" id="btn-lookup" class="bg-white text-black font-bold px-8 py-4 rounded-xl hover:bg-gray-200 transition">LOOKUP</button>
+                </div>
+            </div>
+
+            <div id="lookup-res" class="glass p-8 rounded-3xl hidden">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">ORGANIZATION / ISP</div>
+                        <div id="res-isp" class="text-lg font-bold text-white">...</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">LOKASI (KOTA, NEGARA)</div>
+                        <div id="res-loc" class="text-lg font-bold text-neon">...</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">LATITUDE / LONGITUDE</div>
+                        <div id="res-latlon" class="text-lg font-bold text-white font-mono">...</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-500 mb-1">ASN / TIMEZONE</div>
+                        <div id="res-asn" class="text-lg font-bold text-white">...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -185,115 +221,207 @@
 
     <script>
         // --- UI Logic ---
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('overlay');
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
+        function toggleSidebar() { 
+            document.getElementById('sidebar').classList.toggle('-translate-x-full'); 
+            document.getElementById('overlay').classList.toggle('hidden');
         }
 
-        function switchTab(tabId) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            // Reset button styles
-            document.querySelectorAll('.sidebar-btn').forEach(btn => {
-                btn.classList.remove('text-neon', 'bg-white/5');
-                btn.classList.add('text-gray-400');
-            });
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
             
-            // Show target tab
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.remove('text-gray-400');
-            event.currentTarget.classList.add('text-neon', 'bg-white/5');
-
-            // Close sidebar on mobile
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.className = 'nav-btn flex items-center gap-3 p-4 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition';
+            });
+            event.currentTarget.className = 'nav-btn active flex items-center gap-3 p-4 rounded-xl bg-neon/10 text-neon font-bold border border-neon/20 transition';
+            
             if(window.innerWidth < 768) toggleSidebar();
         }
 
-        // --- Ping Logic dengan Bypass Cache (Wajib untuk hasil akurat) ---
-        async function fetchWithTiming(url) {
-            const bypassCacheUrl = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
+        // --- Core Fetch Logic dengan Bypass Cache ---
+        async function fetchPing(url) {
             const start = performance.now();
             try {
-                const res = await fetch(bypassCacheUrl, { cache: 'no-store' });
-                if (!res.ok) throw new Error('Error');
+                // Tambahkan random ID agar ISP tidak bisa me-load cache
+                const bypassUrl = url.includes('?') ? `${url}&_t=${Date.now()}&_r=${Math.random()}` : `${url}?_t=${Date.now()}&_r=${Math.random()}`;
+                const res = await fetch(bypassUrl, { cache: 'no-store', method: 'GET' });
+                if (!res.ok) throw new Error();
                 const end = performance.now();
                 return Math.round(end - start);
-            } catch (error) {
-                return 'Err';
+            } catch (e) { return 'ERR'; }
+        }
+
+        function updatePingUI(ms, elId, statusId = null) {
+            const el = document.getElementById(elId);
+            if(ms === 'ERR') {
+                el.innerHTML = '<span class="text-red-500">GAGAL</span>';
+                if(statusId) {
+                    document.getElementById(statusId).innerText = "KONEKSI TERPUTUS";
+                    document.getElementById(statusId).className = "mt-6 px-6 py-2 rounded-full bg-red-900 border border-red-500 text-red-200 text-sm font-bold";
+                }
+                return;
+            }
+
+            el.innerHTML = `${ms}<span class="text-3xl md:text-5xl text-gray-500">ms</span>`;
+            
+            if(ms < 50) {
+                el.className = "text-8xl md:text-9xl font-black text-neon neon-glow mt-4";
+                if(statusId) setStatus(statusId, "EXCELLENT (GAMING READY)", "bg-green-900 border-green-500 text-green-300");
+            } else if(ms < 150) {
+                el.className = "text-8xl md:text-9xl font-black text-yellow-400 mt-4";
+                if(statusId) setStatus(statusId, "GOOD (NORMAL)", "bg-yellow-900 border-yellow-500 text-yellow-300");
+            } else {
+                el.className = "text-8xl md:text-9xl font-black text-red-500 mt-4";
+                if(statusId) setStatus(statusId, "HIGH LATENCY (POOR)", "bg-red-900 border-red-500 text-red-300");
             }
         }
 
-        function formatLatency(ms, elementId) {
-            const el = document.getElementById(elementId);
-            el.innerHTML = `${ms}<span class="text-lg">ms</span>`;
-            if (ms === 'Err') el.className = "text-red-500 font-bold";
-            else if (ms < 50) el.className = "text-neon font-black neon-text";
-            else if (ms < 150) el.className = "text-yellow-400 font-black";
-            else el.className = "text-red-500 font-black";
+        function setStatus(id, text, classes) {
+            const el = document.getElementById(id);
+            el.innerText = text;
+            el.className = `mt-6 px-6 py-2 rounded-full border text-sm font-bold tracking-wide ${classes}`;
         }
 
-        // --- Fitur 1: Auto Ping ---
+        // --- Fitur 1: Dashboard Auto Test ---
+        let reportData = {}; // Menyimpan data untuk generate report
+        
         async function runAutoTest() {
-            document.getElementById('ping-result').innerHTML = "<i class='fa-solid fa-spinner fa-spin text-gray-500'></i>";
-            document.getElementById('ping-status').innerText = "Routing... Please wait.";
+            document.getElementById('main-ping').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-gray-600 text-6xl"></i>';
+            document.getElementById('ping-status').innerText = "DIAGNOSING ROUTE...";
+            document.getElementById('diag-alert').style.display = 'none';
 
-            // 1. Tes Ping ke Node Terdekat
-            const latency = await fetchWithTiming('/api/ping');
-            formatLatency(latency, 'ping-result');
-            
-            let statusText = "Excellent";
-            if(latency > 150) statusText = "High Latency! Routing nyasar.";
-            else if(latency > 50) statusText = "Good / Normal";
-            
-            const statusEl = document.getElementById('ping-status');
-            statusEl.innerText = statusText;
-            statusEl.className = latency > 150 ? "mt-4 px-4 py-1 rounded-full bg-red-900 text-red-300 text-sm" : "mt-4 px-4 py-1 rounded-full bg-green-900 text-green-300 text-sm";
-
-            // 2. Ambil Data Geo
+            // 1. Get Geo Info
             try {
-                const geoRes = await fetch(`/api/geo?t=${Date.now()}`);
-                const geoData = await geoRes.json();
-                document.getElementById('geo-ip').innerText = geoData.ip || "Unknown";
-                document.getElementById('geo-city').innerText = geoData.city || "Unknown ISP";
-                document.getElementById('geo-country').innerText = geoData.country || "Unknown";
-                document.getElementById('geo-node').innerText = geoData.vercelRegion || "Unknown";
-            } catch (e) {
-                console.error("Geo fetch failed");
+                const geo = await fetch(`/api/geo?_t=${Date.now()}`).then(r => r.json());
+                document.getElementById('geo-ip').innerText = geo.ip;
+                document.getElementById('geo-city').innerText = geo.city;
+                document.getElementById('geo-country').innerText = geo.country;
+                document.getElementById('geo-node').innerText = geo.node;
+                reportData.geo = geo;
+            } catch(e) { console.error(e); }
+
+            // 2. Do Ping Test
+            const latency = await fetchPing('/api/ping');
+            updatePingUI(latency, 'main-ping', 'ping-status');
+            reportData.latency = latency;
+
+            // Smart Diagnosis untuk 300ms+
+            if(latency !== 'ERR' && latency > 200) {
+                document.getElementById('diag-alert').style.display = 'block';
             }
         }
 
-        // --- Fitur 2: Global Servers ---
-        async function testServer(region) {
-            const elId = `ping-${region}`;
-            document.getElementById(elId).innerHTML = "<i class='fa-solid fa-spinner fa-spin text-gray-500'></i>";
-            // Memaksa request dikirim ke backend, meskipun kita tidak bisa memaksa route Anycast Vercel dari FE,
-            // kita mencatat delay simulasi atau backend mencoba request ke region tersebut.
-            const latency = await fetchWithTiming(`/api/ping?region=${region}`);
-            formatLatency(latency, elId);
-        }
+        // --- Fitur 2: Jitter & Packet Loss Test ---
+        async function runStabilityTest() {
+            document.getElementById('btn-stab').innerText = "Testing... Harap Tunggu";
+            document.getElementById('btn-stab').disabled = true;
+            
+            let pings = [];
+            let lost = 0;
+            const totalPackets = 20;
 
-        async function testAllServers() {
-            const servers = ['sin1', 'hkg1', 'hnd1', 'icn1', 'bom1', 'iad1', 'fra1'];
-            for(let s of servers) {
-                testServer(s);
-                await new Promise(r => setTimeout(r, 200)); // Beri jeda agar animasi terlihat
+            for(let i=1; i<=totalPackets; i++) {
+                const lat = await fetchPing('/api/ping');
+                if(lat === 'ERR' || lat > 2000) lost++;
+                else pings.push(lat);
+
+                // Update UI Progress
+                document.getElementById('stab-count').innerText = `${i} / ${totalPackets}`;
+                document.getElementById('stab-bar').style.width = `${(i/totalPackets)*100}%`;
+                
+                await new Promise(r => setTimeout(r, 150)); // Jeda antar paket
             }
+
+            // Hitung Jitter (Selisih rata-rata)
+            let jitter = 0;
+            if(pings.length > 1) {
+                let diffs = [];
+                for(let i=1; i<pings.length; i++) {
+                    diffs.push(Math.abs(pings[i] - pings[i-1]));
+                }
+                jitter = Math.round(diffs.reduce((a,b)=>a+b, 0) / diffs.length);
+            }
+            
+            const lossPercent = Math.round((lost / totalPackets) * 100);
+
+            // Tampilkan Hasil
+            const jEl = document.getElementById('res-jitter');
+            jEl.innerText = pings.length > 0 ? `${jitter} ms` : 'ERR';
+            jEl.className = jitter > 30 ? "text-6xl font-black text-red-500" : "text-6xl font-black text-neon";
+
+            const lEl = document.getElementById('res-loss');
+            lEl.innerText = `${lossPercent} %`;
+            lEl.className = lossPercent > 0 ? "text-6xl font-black text-red-500" : "text-6xl font-black text-neon";
+
+            document.getElementById('btn-stab').innerText = "Tes Ulang Stabilitas";
+            document.getElementById('btn-stab').disabled = false;
+            
+            reportData.jitter = jitter;
+            reportData.loss = lossPercent;
         }
 
-        // --- Fitur 3: DoT Test ---
+        // --- Fitur 3: Global Servers ---
+        async function pingRegion(reg) {
+            const el = document.getElementById(`r-${reg}`);
+            el.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-gray-600"></i>';
+            const latency = await fetchPing(`/api/ping?region=${reg}`);
+            el.innerText = latency === 'ERR' ? 'GAGAL' : `${latency} ms`;
+            el.className = latency === 'ERR' ? "text-2xl font-black mt-2 text-red-500" : "text-2xl font-black mt-2 text-neon";
+        }
+
+        // --- Fitur 4: DoT Test ---
         async function testDoT() {
-            const input = document.getElementById('dot-input').value || '1.1.1.1';
-            const resultEl = document.getElementById('dot-result');
-            resultEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin text-gray-500'></i>";
-            document.getElementById('dot-status').innerText = `Menghubungi TLS port 853 di ${input}...`;
+            const domain = document.getElementById('dot-in').value || 'dns.google';
+            const resEl = document.getElementById('dot-res');
+            resEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-gray-600"></i>';
+            document.getElementById('dot-msg').innerText = `Menghubungi ${domain}...`;
 
-            const latency = await fetchWithTiming(`/api/dot?server=${encodeURIComponent(input)}`);
-            formatLatency(latency, 'dot-result');
-            document.getElementById('dot-status').innerText = latency === 'Err' ? "Koneksi DoT gagal atau diblokir." : `Berhasil handshake TLS dengan ${input}`;
+            const latency = await fetchPing(`/api/dot?server=${encodeURIComponent(domain)}`);
+            
+            if(latency === 'ERR') {
+                resEl.innerHTML = '<span class="text-red-500">GAGAL</span>';
+                document.getElementById('dot-msg').innerText = "Koneksi ke resolver ditolak / error.";
+            } else {
+                resEl.innerText = `${latency} ms`;
+                resEl.className = "text-5xl font-black text-neon";
+                document.getElementById('dot-msg').innerText = "Handshake DNS Berhasil.";
+            }
         }
 
-        // Jalankan saat web dibuka
+        // --- Fitur 5: IP Tools Backend Based ---
+        async function lookupIP() {
+            const ip = document.getElementById('ip-in').value;
+            if(!ip) return alert("Masukkan IP!");
+            
+            document.getElementById('btn-lookup').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            try {
+                // Fetch melalui backend Vercel kita untuk hindari CORS browser
+                const res = await fetch(`/api/lookup?ip=${encodeURIComponent(ip)}`);
+                const data = await res.json();
+
+                document.getElementById('lookup-res').classList.remove('hidden');
+                document.getElementById('res-isp').innerText = data.org || "Unknown ISP";
+                document.getElementById('res-loc').innerText = `${data.city || '?'}, ${data.country_name || '?'}`;
+                document.getElementById('res-latlon').innerText = `${data.latitude || 0}, ${data.longitude || 0}`;
+                document.getElementById('res-asn').innerText = `${data.asn || '-'} / ${data.timezone || '-'}`;
+            } catch(e) {
+                alert("Gagal melacak IP. Pastikan format benar.");
+            }
+            document.getElementById('btn-lookup').innerText = 'LOOKUP';
+        }
+
+        // --- Fitur 6: Copy Report ---
+        function generateReport() {
+            if(!reportData.latency) {
+                alert("Jalankan 'Network Health' (Dashboard) terlebih dahulu!");
+                return switchTab('dash');
+            }
+            const text = `=== EDGEPULSE DIAGNOSTIC REPORT ===\nDate: ${new Date().toLocaleString()}\nIP: ${reportData.geo?.ip}\nISP/City: ${reportData.geo?.city}, ${reportData.geo?.country}\nConnected Edge Node: ${reportData.geo?.node}\n--- \nLatency to Node: ${reportData.latency}ms\nJitter: ${reportData.jitter !== undefined ? reportData.jitter+'ms' : 'Not Tested'}\nPacket Loss: ${reportData.loss !== undefined ? reportData.loss+'%' : 'Not Tested'}\n\n*Jika Latency > 100ms padahal node di Asia, kemungkinan ISP mengalami Routing Loop ke luar negeri.*`;
+            
+            navigator.clipboard.writeText(text);
+            alert("Laporan berhasil di-copy! Silakan paste (Ctrl+V) ke WhatsApp CS ISP Anda.");
+        }
+
         window.onload = runAutoTest;
     </script>
 </body>
